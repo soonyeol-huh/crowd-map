@@ -49,6 +49,12 @@ function markerColor(population: number) {
   return '#2c7bb6';
 }
 
+function markerMode(zoom: number) {
+  if (zoom < 10) return 'compact';
+  if (zoom < 12) return 'normal';
+  return 'detailed';
+}
+
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -56,12 +62,22 @@ function App() {
   const [threshold, setThreshold] = useState(0);
   const [selected, setSelected] = useState<CrowdPoint | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(10.5);
 
   const filtered = useMemo(
     () => samplePoints.filter((point) => point.population >= threshold),
     [threshold]
   );
-  const total = filtered.reduce((sum, point) => sum + point.population, 0);
+
+  const visiblePoints = useMemo(() => {
+    const sorted = [...filtered].sort((a, b) => b.population - a.population);
+    if (zoomLevel < 10) return sorted.slice(0, 3);
+    if (zoomLevel < 12) return sorted.slice(0, 5);
+    return sorted;
+  }, [filtered, zoomLevel]);
+
+  const total = visiblePoints.reduce((sum, point) => sum + point.population, 0);
+  const mode = markerMode(zoomLevel);
 
   const focusSeoul = () => {
     const map = mapRef.current;
@@ -82,9 +98,11 @@ function App() {
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.on('zoomend', () => setZoomLevel(map.getZoom()));
     map.on('load', () => {
       mapRef.current = map;
       setMapReady(true);
+      setZoomLevel(map.getZoom());
       const bounds = new maplibregl.LngLatBounds();
       samplePoints.forEach((point) => bounds.extend([point.lng, point.lat]));
       map.fitBounds(bounds, { padding: 80, maxZoom: 11.5, duration: 0 });
@@ -106,10 +124,10 @@ function App() {
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
 
-    filtered.forEach((point) => {
+    visiblePoints.forEach((point) => {
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = 'crowd-marker';
+      el.className = `crowd-marker crowd-marker--${mode}`;
       el.style.setProperty('--marker-color', markerColor(point.population));
       el.innerHTML = `<span class="crowd-marker__value">${point.population.toLocaleString()}</span><span class="crowd-marker__name">${point.name}</span>`;
       el.setAttribute('aria-label', `${point.name} 추정 인구 ${point.population.toLocaleString()}명`);
@@ -120,7 +138,7 @@ function App() {
         .addTo(map);
       markersRef.current.push(marker);
     });
-  }, [filtered, mapReady]);
+  }, [visiblePoints, mapReady, mode]);
 
   return (
     <main className="app">
@@ -138,14 +156,16 @@ function App() {
           <input type="range" min="0" max="8000" step="500" value={threshold} onChange={(event) => setThreshold(Number(event.target.value))} />
         </label>
         <div className="metrics">
-          <span>표시 지역 <strong>{filtered.length}</strong></span>
-          <span>추정 인구 합계 <strong>{total.toLocaleString()}명</strong></span>
+          <span>확대 수준 <strong>{zoomLevel.toFixed(1)}</strong></span>
+          <span>표시 지역 <strong>{visiblePoints.length}</strong></span>
+          <span>표시 인구 합계 <strong>{total.toLocaleString()}명</strong></span>
           <button type="button" className="focus-button" onClick={focusSeoul}>서울 샘플 보기</button>
         </div>
       </section>
 
       <section className="map-wrap">
         <div ref={mapContainer} className="map" />
+        <div className="zoom-guide">축소: 주요 지역만 · 확대: 모든 지역과 상세 라벨</div>
         <div className="legend" aria-label="혼잡도 범례">
           <span>적음</span><i className="gradient" /><span>많음</span>
         </div>
