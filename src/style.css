@@ -10,12 +10,17 @@ p { margin: 0; }
 .controls { background: #fff; padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid #d9e0e7; }
 .controls label { min-width: 260px; font-size: 14px; }
 .controls input { width: 100%; display: block; margin-top: 7px; }
-.metrics { display: flex; gap: 20px; font-size: 14px; }
+.metrics { display: flex; align-items: center; gap: 20px; font-size: 14px; }
+.focus-button { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; background: #fff; color: #1e293b; cursor: pointer; }
+.focus-button:hover { background: #f8fafc; }
 .map-wrap { position: relative; min-height: 560px; }
 .map { position: absolute; inset: 0; }
-.map-error { position: absolute; z-index: 3; top: 18px; left: 18px; right: 18px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: rgba(254,242,242,.96); color: #991b1b; font-size: 14px; }
 .legend { position: absolute; left: 18px; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.94); border: 1px solid #d9e0e7; border-radius: 10px; padding: 9px 11px; font-size: 12px; }
 .gradient { width: 120px; height: 10px; border-radius: 999px; background: linear-gradient(90deg,#2c7bb6,#00a6ca,#ffff8c,#fdae61,#d7191c); }
+.crowd-marker { --marker-color: #2c7bb6; width: 74px; height: 74px; border-radius: 50%; border: 3px solid #fff; background: color-mix(in srgb, var(--marker-color) 82%, transparent); box-shadow: 0 4px 16px rgba(15,23,42,.28); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 0; font: inherit; }
+.crowd-marker::before { content: ''; position: absolute; width: 112px; height: 112px; border-radius: 50%; background: color-mix(in srgb, var(--marker-color) 22%, transparent); z-index: -1; }
+.crowd-marker__value { font-size: 15px; font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
+.crowd-marker__name { margin-top: 3px; font-size: 11px; font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
 .detail { position: absolute; right: 18px; top: 18px; z-index: 2; min-width: 210px; background: rgba(255,255,255,.96); border: 1px solid #d9e0e7; border-radius: 14px; padding: 16px; box-shadow: 0 8px 28px rgba(15,23,42,.16); }
 .detail button { position: absolute; right: 10px; top: 7px; border: 0; background: none; font-size: 24px; cursor: pointer; }
 .detail h2 { margin: 0 0 10px; font-size: 17px; }
@@ -24,6 +29,8 @@ p { margin: 0; }
 footer { background: #fff; border-top: 1px solid #d9e0e7; padding: 10px 22px; }
 @media(max-width: 650px){
   .topbar,.controls { align-items: stretch; flex-direction: column; }
-  .metrics { justify-content: space-between; }
+  .metrics { justify-content: space-between; flex-wrap: wrap; }
   .map-wrap { min-height: 650px; }
+  .crowd-marker { width: 64px; height: 64px; }
+  .crowd-marker::before { width: 94px; height: 94px; }
 }
