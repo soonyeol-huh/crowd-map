@@ -13,6 +13,7 @@ p { margin: 0; }
 .metrics { display: flex; gap: 20px; font-size: 14px; }
 .map-wrap { position: relative; min-height: 560px; }
 .map { position: absolute; inset: 0; }
+.map-error { position: absolute; z-index: 3; top: 18px; left: 18px; right: 18px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 10px; background: rgba(254,242,242,.96); color: #991b1b; font-size: 14px; }
 .legend { position: absolute; left: 18px; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.94); border: 1px solid #d9e0e7; border-radius: 10px; padding: 9px 11px; font-size: 12px; }
 .gradient { width: 120px; height: 10px; border-radius: 999px; background: linear-gradient(90deg,#2c7bb6,#00a6ca,#ffff8c,#fdae61,#d7191c); }
 .detail { position: absolute; right: 18px; top: 18px; z-index: 2; min-width: 210px; background: rgba(255,255,255,.96); border: 1px solid #d9e0e7; border-radius: 14px; padding: 16px; box-shadow: 0 8px 28px rgba(15,23,42,.16); }
