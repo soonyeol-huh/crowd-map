@@ -51,7 +51,7 @@ function markerColor(population: number) {
 
 function markerMode(zoom: number) {
   if (zoom < 10) return 'compact';
-  if (zoom < 12) return 'normal';
+  if (zoom < 13) return 'normal';
   return 'detailed';
 }
 
@@ -98,7 +98,7 @@ function App() {
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.on('zoomend', () => setZoomLevel(map.getZoom()));
+    map.on('zoom', () => setZoomLevel(map.getZoom()));
     map.on('load', () => {
       mapRef.current = map;
       setMapReady(true);
@@ -129,6 +129,7 @@ function App() {
       el.type = 'button';
       el.className = `crowd-marker crowd-marker--${mode}`;
       el.style.setProperty('--marker-color', markerColor(point.population));
+      el.dataset.label = `${point.name} · ${point.population.toLocaleString()}명`;
       el.innerHTML = `<span class="crowd-marker__value">${point.population.toLocaleString()}</span><span class="crowd-marker__name">${point.name}</span>`;
       el.setAttribute('aria-label', `${point.name} 추정 인구 ${point.population.toLocaleString()}명`);
       el.addEventListener('click', () => setSelected(point));
@@ -165,7 +166,7 @@ function App() {
 
       <section className="map-wrap">
         <div ref={mapContainer} className="map" />
-        <div className="zoom-guide">축소: 주요 지역만 · 확대: 모든 지역과 상세 라벨</div>
+        <div className="zoom-guide">축소: 집계 버블 · 확대: 정확한 지점 마커</div>
         <div className="legend" aria-label="혼잡도 범례">
           <span>적음</span><i className="gradient" /><span>많음</span>
         </div>
