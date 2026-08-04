@@ -41,29 +41,35 @@ const baseMapStyle: maplibregl.StyleSpecification = {
   layers: [{ id: 'osm', type: 'raster', source: 'osm', minzoom: 0, maxzoom: 19 }]
 };
 
-function toGeoJSON(points: CrowdPoint[]) {
-  return {
-    type: 'FeatureCollection' as const,
-    features: points.map((point) => ({
-      type: 'Feature' as const,
-      geometry: { type: 'Point' as const, coordinates: [point.lng, point.lat] },
-      properties: { ...point }
-    }))
-  };
+function markerColor(population: number) {
+  if (population >= 8000) return '#d7191c';
+  if (population >= 6500) return '#f57c00';
+  if (population >= 4500) return '#fbc02d';
+  if (population >= 2500) return '#00a6ca';
+  return '#2c7bb6';
 }
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
   const [threshold, setThreshold] = useState(0);
   const [selected, setSelected] = useState<CrowdPoint | null>(null);
-  const [mapError, setMapError] = useState<string | null>(null);
+  const [mapReady, setMapReady] = useState(false);
 
   const filtered = useMemo(
     () => samplePoints.filter((point) => point.population >= threshold),
     [threshold]
   );
   const total = filtered.reduce((sum, point) => sum + point.population, 0);
+
+  const focusSeoul = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    const bounds = new maplibregl.LngLatBounds();
+    samplePoints.forEach((point) => bounds.extend([point.lng, point.lat]));
+    map.fitBounds(bounds, { padding: 80, maxZoom: 11.5, duration: 500 });
+  };
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -76,106 +82,52 @@ function App() {
     });
 
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.on('error', (event) => {
-      console.error('MapLibre error', event.error);
-      setMapError(event.error?.message ?? '지도 데이터를 불러오지 못했습니다.');
-    });
-
     map.on('load', () => {
-      setMapError(null);
-      map.addSource('crowd', { type: 'geojson', data: toGeoJSON(samplePoints) });
-
-      map.addLayer({
-        id: 'crowd-heat',
-        type: 'heatmap',
-        source: 'crowd',
-        maxzoom: 16,
-        paint: {
-          'heatmap-weight': ['interpolate', ['linear'], ['get', 'population'], 0, 0, 9000, 1],
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 8, 1.3, 14, 2.5],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 8, 30, 14, 75],
-          'heatmap-opacity': 0.75,
-          'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(44,123,182,0)',
-            0.15, '#2c7bb6',
-            0.35, '#00a6ca',
-            0.55, '#ffff8c',
-            0.75, '#fdae61',
-            1, '#d7191c'
-          ]
-        }
-      });
-
-      map.addLayer({
-        id: 'crowd-point',
-        type: 'circle',
-        source: 'crowd',
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['zoom'], 8, 10, 13, 22],
-          'circle-color': ['step', ['get', 'population'], '#2c7bb6', 2500, '#00a6ca', 4500, '#ffff8c', 6500, '#fdae61', 8000, '#d7191c'],
-          'circle-opacity': 0.9,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        }
-      });
-
-      map.addLayer({
-        id: 'crowd-label',
-        type: 'symbol',
-        source: 'crowd',
-        layout: {
-          'text-field': ['concat', ['get', 'name'], '\n', ['to-string', ['get', 'population']], '명'],
-          'text-size': 12,
-          'text-offset': [0, 1.8],
-          'text-anchor': 'top'
-        },
-        paint: {
-          'text-color': '#172033',
-          'text-halo-color': '#ffffff',
-          'text-halo-width': 2
-        }
-      });
-
+      mapRef.current = map;
+      setMapReady(true);
       const bounds = new maplibregl.LngLatBounds();
       samplePoints.forEach((point) => bounds.extend([point.lng, point.lat]));
-      map.fitBounds(bounds, { padding: 70, maxZoom: 11.5, duration: 0 });
-
-      map.on('click', 'crowd-point', (event) => {
-        const properties = event.features?.[0]?.properties;
-        if (!properties) return;
-        setSelected({
-          id: String(properties.id),
-          name: String(properties.name),
-          lat: Number(properties.lat),
-          lng: Number(properties.lng),
-          population: Number(properties.population),
-          updatedAt: String(properties.updatedAt),
-          source: properties.source
-        });
-      });
-      map.on('mouseenter', 'crowd-point', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'crowd-point', () => { map.getCanvas().style.cursor = ''; });
+      map.fitBounds(bounds, { padding: 80, maxZoom: 11.5, duration: 0 });
     });
 
     mapRef.current = map;
     return () => {
+      markersRef.current.forEach((marker) => marker.remove());
+      markersRef.current = [];
       map.remove();
       mapRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    const source = mapRef.current?.getSource('crowd') as maplibregl.GeoJSONSource | undefined;
-    source?.setData(toGeoJSON(filtered));
-  }, [filtered]);
+    const map = mapRef.current;
+    if (!map || !mapReady) return;
+
+    markersRef.current.forEach((marker) => marker.remove());
+    markersRef.current = [];
+
+    filtered.forEach((point) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'crowd-marker';
+      el.style.setProperty('--marker-color', markerColor(point.population));
+      el.innerHTML = `<span class="crowd-marker__value">${point.population.toLocaleString()}</span><span class="crowd-marker__name">${point.name}</span>`;
+      el.setAttribute('aria-label', `${point.name} 추정 인구 ${point.population.toLocaleString()}명`);
+      el.addEventListener('click', () => setSelected(point));
+
+      const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+        .setLngLat([point.lng, point.lat])
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
+  }, [filtered, mapReady]);
 
   return (
     <main className="app">
       <header className="topbar">
         <div>
           <h1>실시간 혼잡도 지도</h1>
-          <p>통신·공공 유동인구 데이터를 격자 단위로 시각화</p>
+          <p>통신·공공 유동인구 데이터를 지도 위에 시각화</p>
         </div>
         <span className="status">● 샘플 데이터</span>
       </header>
@@ -188,12 +140,12 @@ function App() {
         <div className="metrics">
           <span>표시 지역 <strong>{filtered.length}</strong></span>
           <span>추정 인구 합계 <strong>{total.toLocaleString()}명</strong></span>
+          <button type="button" className="focus-button" onClick={focusSeoul}>서울 샘플 보기</button>
         </div>
       </section>
 
       <section className="map-wrap">
         <div ref={mapContainer} className="map" />
-        {mapError && <div className="map-error">지도 오류: {mapError}</div>}
         <div className="legend" aria-label="혼잡도 범례">
           <span>적음</span><i className="gradient" /><span>많음</span>
         </div>
