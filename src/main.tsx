@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import maplibregl, { Map as MapLibreMap, GeoJSONSource } from 'maplibre-gl';
+import { Map as MapLibreMap, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 
@@ -46,13 +46,13 @@ function App() {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const map = new maplibregl.Map({
+    const map = new MapLibreMap({
       container: mapContainer.current,
       style: 'https://demotiles.maplibre.org/style.json',
       center: [126.985, 37.54],
       zoom: 10.5
     });
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.addControl(new NavigationControl(), 'top-right');
 
     map.on('load', () => {
       map.addSource('crowd', { type: 'geojson', data: toGeoJSON(filtered) });
