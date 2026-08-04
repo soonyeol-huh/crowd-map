@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Map as MapLibreMap, NavigationControl, type GeoJSONSource } from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import './style.css';
 
@@ -35,10 +35,11 @@ function toGeoJSON(points: CrowdPoint[]) {
 
 function App() {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<MapLibreMap | null>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const [points] = useState(samplePoints);
   const [threshold, setThreshold] = useState(0);
   const [selected, setSelected] = useState<CrowdPoint | null>(null);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   const filtered = useMemo(() => points.filter((p) => p.population >= threshold), [points, threshold]);
   const total = filtered.reduce((sum, p) => sum + p.population, 0);
@@ -46,72 +47,83 @@ function App() {
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const map = new MapLibreMap({
-      container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json',
-      center: [126.985, 37.54],
-      zoom: 10.5
-    });
-    map.addControl(new NavigationControl(), 'top-right');
-
-    map.on('load', () => {
-      map.addSource('crowd', { type: 'geojson', data: toGeoJSON(filtered) });
-      map.addLayer({
-        id: 'crowd-heat',
-        type: 'heatmap',
-        source: 'crowd',
-        maxzoom: 15,
-        paint: {
-          'heatmap-weight': ['interpolate', ['linear'], ['get', 'population'], 0, 0, 9000, 1],
-          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 15, 2.2],
-          'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 9, 20, 15, 55],
-          'heatmap-opacity': 0.85,
-          'heatmap-color': [
-            'interpolate', ['linear'], ['heatmap-density'],
-            0, 'rgba(33,102,172,0)',
-            0.2, '#2c7bb6',
-            0.4, '#00a6ca',
-            0.6, '#ffff8c',
-            0.8, '#fdae61',
-            1, '#d7191c'
-          ]
-        }
-      });
-      map.addLayer({
-        id: 'crowd-point',
-        type: 'circle',
-        source: 'crowd',
-        minzoom: 12,
-        paint: {
-          'circle-radius': ['interpolate', ['linear'], ['get', 'population'], 0, 6, 9000, 18],
-          'circle-color': ['step', ['get', 'population'], '#2c7bb6', 2500, '#00a6ca', 4500, '#ffff8c', 6500, '#fdae61', 8000, '#d7191c'],
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#ffffff'
-        }
+    try {
+      const map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: 'https://demotiles.maplibre.org/style.json',
+        center: [126.985, 37.54],
+        zoom: 10.5
       });
 
-      map.on('click', 'crowd-point', (event) => {
-        const properties = event.features?.[0]?.properties;
-        if (!properties) return;
-        setSelected({
-          id: String(properties.id),
-          lat: Number(properties.lat),
-          lng: Number(properties.lng),
-          population: Number(properties.population),
-          updatedAt: String(properties.updatedAt),
-          source: properties.source
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.on('error', (event) => {
+        console.error('MapLibre error', event.error);
+        setMapError(event.error?.message ?? '지도 데이터를 불러오지 못했습니다.');
+      });
+
+      map.on('load', () => {
+        setMapError(null);
+        map.addSource('crowd', { type: 'geojson', data: toGeoJSON(filtered) });
+        map.addLayer({
+          id: 'crowd-heat',
+          type: 'heatmap',
+          source: 'crowd',
+          maxzoom: 15,
+          paint: {
+            'heatmap-weight': ['interpolate', ['linear'], ['get', 'population'], 0, 0, 9000, 1],
+            'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 9, 0.8, 15, 2.2],
+            'heatmap-radius': ['interpolate', ['linear'], ['zoom'], 9, 20, 15, 55],
+            'heatmap-opacity': 0.85,
+            'heatmap-color': [
+              'interpolate', ['linear'], ['heatmap-density'],
+              0, 'rgba(33,102,172,0)',
+              0.2, '#2c7bb6',
+              0.4, '#00a6ca',
+              0.6, '#ffff8c',
+              0.8, '#fdae61',
+              1, '#d7191c'
+            ]
+          }
         });
-      });
-      map.on('mouseenter', 'crowd-point', () => { map.getCanvas().style.cursor = 'pointer'; });
-      map.on('mouseleave', 'crowd-point', () => { map.getCanvas().style.cursor = ''; });
-    });
+        map.addLayer({
+          id: 'crowd-point',
+          type: 'circle',
+          source: 'crowd',
+          minzoom: 12,
+          paint: {
+            'circle-radius': ['interpolate', ['linear'], ['get', 'population'], 0, 6, 9000, 18],
+            'circle-color': ['step', ['get', 'population'], '#2c7bb6', 2500, '#00a6ca', 4500, '#ffff8c', 6500, '#fdae61', 8000, '#d7191c'],
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
 
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+        map.on('click', 'crowd-point', (event) => {
+          const properties = event.features?.[0]?.properties;
+          if (!properties) return;
+          setSelected({
+            id: String(properties.id),
+            lat: Number(properties.lat),
+            lng: Number(properties.lng),
+            population: Number(properties.population),
+            updatedAt: String(properties.updatedAt),
+            source: properties.source
+          });
+        });
+        map.on('mouseenter', 'crowd-point', () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'crowd-point', () => { map.getCanvas().style.cursor = ''; });
+      });
+
+      mapRef.current = map;
+      return () => { map.remove(); mapRef.current = null; };
+    } catch (error) {
+      console.error(error);
+      setMapError(error instanceof Error ? error.message : '지도 초기화에 실패했습니다.');
+    }
   }, []);
 
   useEffect(() => {
-    const source = mapRef.current?.getSource('crowd') as GeoJSONSource | undefined;
+    const source = mapRef.current?.getSource('crowd') as maplibregl.GeoJSONSource | undefined;
     source?.setData(toGeoJSON(filtered));
   }, [filtered]);
 
@@ -138,6 +150,7 @@ function App() {
 
       <section className="map-wrap">
         <div ref={mapContainer} className="map" />
+        {mapError && <div className="map-error">지도 오류: {mapError}</div>}
         <div className="legend" aria-label="혼잡도 범례">
           <span>적음</span><i className="gradient"/><span>많음</span>
         </div>
@@ -157,4 +170,6 @@ function App() {
   );
 }
 
-createRoot(document.getElementById('root')!).render(<App />);
+const root = document.getElementById('root');
+if (!root) throw new Error('root element not found');
+createRoot(root).render(<App />);
