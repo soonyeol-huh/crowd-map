@@ -18,7 +18,7 @@ p { margin: 0; }
 .zoom-guide { position: absolute; z-index: 2; left: 18px; top: 18px; padding: 8px 10px; border: 1px solid #d9e0e7; border-radius: 9px; background: rgba(255,255,255,.92); color: #475569; font-size: 12px; }
 .legend { position: absolute; left: 18px; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.94); border: 1px solid #d9e0e7; border-radius: 10px; padding: 9px 11px; font-size: 12px; }
 .gradient { width: 120px; height: 10px; border-radius: 999px; background: linear-gradient(90deg,#2c7bb6,#00a6ca,#ffff8c,#fdae61,#d7191c); }
-.crowd-marker { --marker-color: #2c7bb6; position: relative; border-radius: 50%; border: 3px solid #fff; background: color-mix(in srgb, var(--marker-color) 84%, transparent); box-shadow: 0 4px 16px rgba(15,23,42,.28); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 0; font: inherit; transition: width .2s ease, height .2s ease, opacity .2s ease; }
+.crowd-marker { --marker-color: #2c7bb6; position: relative; border-radius: 50%; border: 3px solid #fff; background: color-mix(in srgb, var(--marker-color) 84%, transparent); box-shadow: 0 4px 16px rgba(15,23,42,.28); color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 0; font: inherit; transition: width .15s ease, height .15s ease, opacity .15s ease; }
 .crowd-marker::before { content: ''; position: absolute; border-radius: 50%; background: color-mix(in srgb, var(--marker-color) 22%, transparent); z-index: -1; }
 .crowd-marker__value { font-weight: 800; line-height: 1.1; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
 .crowd-marker__name { font-weight: 700; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,.45); }
@@ -26,14 +26,15 @@ p { margin: 0; }
 .crowd-marker--compact::before { width: 64px; height: 64px; }
 .crowd-marker--compact .crowd-marker__value { font-size: 11px; }
 .crowd-marker--compact .crowd-marker__name { display: none; }
-.crowd-marker--normal { width: 62px; height: 62px; }
-.crowd-marker--normal::before { width: 92px; height: 92px; }
-.crowd-marker--normal .crowd-marker__value { font-size: 14px; }
+.crowd-marker--normal { width: 58px; height: 58px; }
+.crowd-marker--normal::before { width: 84px; height: 84px; }
+.crowd-marker--normal .crowd-marker__value { font-size: 13px; }
 .crowd-marker--normal .crowd-marker__name { display: none; }
-.crowd-marker--detailed { width: 78px; height: 78px; }
-.crowd-marker--detailed::before { width: 118px; height: 118px; }
-.crowd-marker--detailed .crowd-marker__value { font-size: 15px; }
-.crowd-marker--detailed .crowd-marker__name { margin-top: 3px; font-size: 11px; }
+.crowd-marker--detailed { width: 18px; height: 18px; border-width: 2px; box-shadow: 0 2px 7px rgba(15,23,42,.3); }
+.crowd-marker--detailed::before { width: 32px; height: 32px; }
+.crowd-marker--detailed::after { content: attr(data-label); position: absolute; left: 22px; top: 50%; transform: translateY(-50%); padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 7px; background: rgba(255,255,255,.96); box-shadow: 0 2px 8px rgba(15,23,42,.14); color: #172033; font-size: 12px; font-weight: 700; line-height: 1; white-space: nowrap; }
+.crowd-marker--detailed .crowd-marker__value,
+.crowd-marker--detailed .crowd-marker__name { display: none; }
 .detail { position: absolute; right: 18px; top: 18px; z-index: 2; min-width: 210px; background: rgba(255,255,255,.96); border: 1px solid #d9e0e7; border-radius: 14px; padding: 16px; box-shadow: 0 8px 28px rgba(15,23,42,.16); }
 .detail button { position: absolute; right: 10px; top: 7px; border: 0; background: none; font-size: 24px; cursor: pointer; }
 .detail h2 { margin: 0 0 10px; font-size: 17px; }
@@ -45,4 +46,5 @@ footer { background: #fff; border-top: 1px solid #d9e0e7; padding: 10px 22px; }
   .metrics { justify-content: space-between; flex-wrap: wrap; gap: 10px; }
   .map-wrap { min-height: 650px; }
   .zoom-guide { right: 56px; }
+  .crowd-marker--detailed::after { font-size: 11px; padding: 4px 6px; }
 }
