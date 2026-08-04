@@ -22,6 +22,31 @@ const samplePoints: CrowdPoint[] = [
   { id: 'gwanghwamun', lat: 37.5716, lng: 126.9769, population: 2800, updatedAt: new Date().toISOString(), source: 'sample' }
 ];
 
+const baseMapStyle: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: [
+        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors'
+    }
+  },
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+      minzoom: 0,
+      maxzoom: 19
+    }
+  ]
+};
+
 function toGeoJSON(points: CrowdPoint[]) {
   return {
     type: 'FeatureCollection' as const,
@@ -50,7 +75,7 @@ function App() {
     try {
       const map = new maplibregl.Map({
         container: mapContainer.current,
-        style: 'https://demotiles.maplibre.org/style.json',
+        style: baseMapStyle,
         center: [126.985, 37.54],
         zoom: 10.5
       });
