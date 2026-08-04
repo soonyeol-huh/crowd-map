@@ -1,0 +1,28 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; min-height: 100%; font-family: Pretendard, system-ui, sans-serif; color: #152033; }
+body { background: #eef2f6; }
+.app { min-height: 100vh; display: grid; grid-template-rows: auto auto 1fr auto; }
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; background: #fff; border-bottom: 1px solid #d9e0e7; }
+h1 { margin: 0 0 5px; font-size: 22px; }
+p { margin: 0; }
+.topbar p, footer { color: #64748b; font-size: 13px; }
+.status { color: #087f5b; font-size: 13px; white-space: nowrap; }
+.controls { background: #fff; padding: 12px 22px; display: flex; align-items: center; justify-content: space-between; gap: 24px; border-bottom: 1px solid #d9e0e7; }
+.controls label { min-width: 260px; font-size: 14px; }
+.controls input { width: 100%; display: block; margin-top: 7px; }
+.metrics { display: flex; gap: 20px; font-size: 14px; }
+.map-wrap { position: relative; min-height: 560px; }
+.map { position: absolute; inset: 0; }
+.legend { position: absolute; left: 18px; bottom: 18px; z-index: 2; display: flex; align-items: center; gap: 7px; background: rgba(255,255,255,.94); border: 1px solid #d9e0e7; border-radius: 10px; padding: 9px 11px; font-size: 12px; }
+.gradient { width: 120px; height: 10px; border-radius: 999px; background: linear-gradient(90deg,#2c7bb6,#00a6ca,#ffff8c,#fdae61,#d7191c); }
+.detail { position: absolute; right: 18px; top: 18px; z-index: 2; min-width: 210px; background: rgba(255,255,255,.96); border: 1px solid #d9e0e7; border-radius: 14px; padding: 16px; box-shadow: 0 8px 28px rgba(15,23,42,.16); }
+.detail button { position: absolute; right: 10px; top: 7px; border: 0; background: none; font-size: 24px; cursor: pointer; }
+.detail h2 { margin: 0 0 10px; font-size: 17px; }
+.detail p { margin-top: 6px; font-size: 13px; color: #475569; }
+.detail .big { font-size: 25px; font-weight: 700; color: #dc2626; }
+footer { background: #fff; border-top: 1px solid #d9e0e7; padding: 10px 22px; }
+@media(max-width: 650px){
+  .topbar,.controls { align-items: stretch; flex-direction: column; }
+  .metrics { justify-content: space-between; }
+  .map-wrap { min-height: 650px; }
+}
